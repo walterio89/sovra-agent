@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../core/network/api_client.dart';
 import '../../core/storage/secure_store.dart';
@@ -41,9 +42,9 @@ class _PairRequestScreenState extends State<PairRequestScreen> {
       final res = await _api.dio.post(
         '/api/devices/pair/request',
         data: {
-          'device_name': _nameCtrl.text.trim(),
+          'name': _nameCtrl.text.trim(),
           'type': 'phone',
-          'platform': 'android', // per ora hardcoded (lo renderemo dinamico dopo)
+          'platform': 'android',
           'os_version': null,
           'app_version': '0.1.0',
           'device_identifier': installId,
@@ -63,6 +64,21 @@ class _PairRequestScreenState extends State<PairRequestScreen> {
         context,
       ).pushReplacement(MaterialPageRoute(builder: (_) => const PairConfirmScreen()));
     } catch (e) {
+      String msg = e.toString();
+
+      // Se è un errore Dio, prova a mostrare i dettagli JSON di Laravel
+      if (e is DioException) {
+        final data = e.response?.data;
+        if (data is Map && data['errors'] is Map) {
+          final errors = (data['errors'] as Map).entries
+              .map((kv) => '${kv.key}: ${(kv.value as List).join(", ")}')
+              .join('\n');
+          setState(() => _error = errors);
+          return;
+        }
+        setState(() => _error = data?.toString() ?? e.toString());
+        return;
+      }
       setState(() => _error = e.toString());
     } finally {
       if (mounted) setState(() => _loading = false);

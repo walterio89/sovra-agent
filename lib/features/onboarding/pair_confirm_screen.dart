@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../core/network/api_client.dart';
 import '../../core/storage/secure_store.dart';
@@ -37,18 +38,42 @@ class _PairConfirmScreenState extends State<PairConfirmScreen> {
         },
       );
 
-      final accessToken = res.data['access_token']?.toString();
-      if (accessToken == null || accessToken.isEmpty) {
-        throw Exception('access_token mancante in response');
+      print('CONFIRM RESPONSE: ${res.data}');
+
+      final data = res.data;
+
+      final token = (data is Map)
+          ? (data['access_token']?.toString() ??
+                data['plainTextToken']?.toString() ??
+                data['token']?.toString())
+          : null;
+
+      if (token == null || token.isEmpty) {
+        throw Exception('Token mancante in response: $data');
       }
 
-      await _store.setAccessToken(accessToken);
+      await _store.setAccessToken(token);
 
       if (!mounted) return;
       Navigator.of(
         context,
       ).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const HomeScreen()), (_) => false);
     } catch (e) {
+      String msg = e.toString();
+
+      // Se è un errore Dio, prova a mostrare i dettagli JSON di Laravel
+      if (e is DioException) {
+        final data = e.response?.data;
+        if (data is Map && data['errors'] is Map) {
+          final errors = (data['errors'] as Map).entries
+              .map((kv) => '${kv.key}: ${(kv.value as List).join(", ")}')
+              .join('\n');
+          setState(() => _error = errors);
+          return;
+        }
+        setState(() => _error = data?.toString() ?? e.toString());
+        return;
+      }
       setState(() => _error = e.toString());
     } finally {
       if (mounted) setState(() => _loading = false);
