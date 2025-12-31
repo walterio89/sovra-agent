@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../core/network/api_client.dart';
 import '../../core/storage/secure_store.dart';
-import 'home/home_screen.dart';
+import '../home/home_screen.dart';
 
 class PairConfirmScreen extends StatefulWidget {
   const PairConfirmScreen({super.key});
