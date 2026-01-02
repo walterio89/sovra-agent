@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'features/onboarding/onboarding_screen.dart';
+import 'features/bootstrap/app_boot.dart';
 
 class SovraApp extends StatelessWidget {
   const SovraApp({super.key});
@@ -9,8 +9,11 @@ class SovraApp extends StatelessWidget {
     return MaterialApp(
       title: 'SOVRA Agent',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(useMaterial3: true, brightness: Brightness.light),
-      home: const OnboardingScreen(),
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
+      ),
+      home: const AppBoot(),
     );
   }
 }

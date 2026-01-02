@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:sovra_agent/features/heartbeat/heartbeat_result.dart';
 import '../../core/storage/secure_store.dart';
 import '../heartbeat/heartbeat_api.dart';
 import '../heartbeat/heartbeat_foreground_service.dart';
@@ -51,7 +52,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _sendHeartbeatAndUpdateUi() async {
     final result = await hbApi.send();
 
-    if (result.isOk) {
+    if (!mounted) return;
+
+    if (result is HeartbeatOk) {
       setState(() {
         _lastError = null;
         _lastOkAt = result.lastSeenAt; // server time
@@ -59,7 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    if (result.isBlocked) {
+    if (result is HeartbeatBlocked) {
       if (!mounted) return;
       Navigator.of(
         context,
@@ -67,7 +70,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    if (result.isReconnect) {
+    if (result is HeartbeatReconnect) {
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
@@ -77,10 +80,12 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    // offline
-    setState(() {
-      _lastError = result.message ?? 'offline';
-    });
+    if (result is HeartbeatOffline) {
+      setState(() {
+        _lastError = result.message; // per UI -> Offline
+      });
+      return;
+    }
   }
 
   HomeStatus _computeStatus() {

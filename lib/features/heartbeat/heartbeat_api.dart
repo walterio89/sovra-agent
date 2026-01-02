@@ -1,40 +1,8 @@
 import 'package:dio/dio.dart';
 import '../../core/network/api_client.dart';
 import '../../core/storage/secure_store.dart';
-
-class HeartbeatResult {
-  const HeartbeatResult._({
-    this.deviceId,
-    this.lastSeenAt,
-    this.reason,
-    this.message,
-    this.kind = HeartbeatKind.offline,
-  });
-
-  final int? deviceId;
-  final DateTime? lastSeenAt;
-  final String? reason;
-  final String? message;
-  final HeartbeatKind kind;
-
-  factory HeartbeatResult.ok({required int deviceId, required DateTime lastSeenAt}) =>
-      HeartbeatResult._(kind: HeartbeatKind.ok, deviceId: deviceId, lastSeenAt: lastSeenAt);
-
-  factory HeartbeatResult.reconnect({required String reason}) =>
-      HeartbeatResult._(kind: HeartbeatKind.reconnect, reason: reason);
-
-  factory HeartbeatResult.blocked() => const HeartbeatResult._(kind: HeartbeatKind.blocked);
-
-  factory HeartbeatResult.offline({required String message}) =>
-      HeartbeatResult._(kind: HeartbeatKind.offline, message: message);
-
-  bool get isOk => kind == HeartbeatKind.ok;
-  bool get isBlocked => kind == HeartbeatKind.blocked;
-  bool get isReconnect => kind == HeartbeatKind.reconnect;
-  bool get isOffline => kind == HeartbeatKind.offline;
-}
-
-enum HeartbeatKind { ok, reconnect, blocked, offline }
+import 'heartbeat_result.dart';
+import '../metrics/device_metrics.dart';
 
 class HeartbeatApi {
   HeartbeatApi(this._store) : _api = ApiClient(_store);
@@ -44,10 +12,8 @@ class HeartbeatApi {
 
   Future<HeartbeatResult> send({int? storageTotalBytes, int? storageFreeBytes}) async {
     try {
-      final res = await _api.dio.post(
-        '/api/devices/heartbeat',
-        data: {'storage_total_bytes': storageTotalBytes, 'storage_free_bytes': storageFreeBytes},
-      );
+      final payload = await DeviceMetrics.collectHeartbeat();
+      final res = await _api.dio.post('/api/devices/heartbeat', data: payload);
 
       final data = res.data;
       if (data is Map) {

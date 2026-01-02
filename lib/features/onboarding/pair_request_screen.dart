@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../core/network/api_client.dart';
 import '../../core/storage/secure_store.dart';
 import 'pair_confirm_screen.dart';
+import '../metrics/device_metrics.dart';
 
 class PairRequestScreen extends StatefulWidget {
   const PairRequestScreen({super.key});
@@ -38,18 +39,11 @@ class _PairRequestScreenState extends State<PairRequestScreen> {
 
     try {
       final installId = await _getOrCreateInstallId();
+      final metrics = await DeviceMetrics.collectPairRequest();
 
       final res = await _api.dio.post(
         '/api/devices/pair/request',
-        data: {
-          'name': _nameCtrl.text.trim(),
-          'type': 'phone',
-          'platform': 'android',
-          'os_version': null,
-          'app_version': '0.1.0',
-          'device_identifier': installId,
-          'hardware_model': null,
-        },
+        data: {'name': _nameCtrl.text.trim(), 'device_identifier': installId, ...metrics},
       );
 
       final deviceId = res.data['device_id']?.toString();

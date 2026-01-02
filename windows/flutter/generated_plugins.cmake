@@ -3,6 +3,8 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  connectivity_plus
+  disk_space_2
   flutter_secure_storage_windows
 )
 
